@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "Quickly display basic Plotly charts based on data inside a Pandas dataframe."
 authors = ["Preben Hesvik <Prebenhesvik@hotmail.com>"]
 repository = 'https://github.com/PrebenHesvik/plotly_chart_builder'
-readme = "README.md"
+license = "MIT"
+readme = "README.rst"
 keywords = [
     "Chart",
     "Plotly",
