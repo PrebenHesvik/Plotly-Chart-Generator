@@ -1,7 +1,7 @@
 ======================
 Plotly Chart Generator
 ======================
-.. image:: https://img.shields.io/pypi/l/Plotly Chart Generator   :alt: PyPI - License
+.. image:: https://img.shields.io/pypi/l/plotly_chart_generator   :alt: PyPI - License
 
 Description
 -----------
