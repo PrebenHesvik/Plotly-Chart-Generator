@@ -103,3 +103,6 @@ dmypy.json
 
 # vscode
 .vscode/
+*.vscode
+
+.ipynb_checkpoints

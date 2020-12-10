@@ -7,35 +7,21 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 
-# Render Plotly plots in notebook
-py.offline.init_notebook_mode(connected=True)
-
 
 class PlotlyChart():
 
-    def __init__(self):
-        pass
+    def __init__(self, iplot):
+        self.iplot = iplot
 
     def check_if_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
             raise TypeError('You must pass a DataFrame.')
 
-    def check_dataframe_shape(self, df, orientation):
-        if orientation == 'v':
-            if df.shape[0] > df.shape[1]:
-                raise ValueError(
-                    'Transpose your dataframe or change orientation to `h`.')
-
-        elif orientation == 'h':
-            if df.shape[0] < df.shape[1]:
-                raise ValueError(
-                    'Transpose your dataframe or change orientation to `v`.')
-
-    def bar(self, df, layout, orientation='v', bar_width=0.5,
-            opacity=0.9, sort_by=None, ascending=False, mean=False,
-            median=False, mode=None, textpos=None,
-            annotations=None, shapes=None, color_scheme='standard',
-            linewidth=1, linecolor='#2C3347'):
+    def bar(self, df, layout, orientation='v', bar_width=None,
+            opacity=0.9, sort_by=None, ascending=False,
+            mode=None, textpos=None, annotations=None,
+            shapes=None, linewidth=1, linecolor='#2C3347',
+            marker_color=None):
         """Horizontal and vertical bar-charts.
 
         Create a horizontal or vertical chart by passing a pandas dataframe,
@@ -103,8 +89,6 @@ class PlotlyChart():
         shapes : list, optional
             Insert geometric shapes to highlight something on the
             chart, by default None
-        color_scheme : str, optional
-            [description], by default 'standard'
         linewidth : int, optional
             Width of outer border of each bar, by default 1
         linecolor : str, optional
@@ -115,28 +99,33 @@ class PlotlyChart():
 
         df = self.sort_table(df, sort_by, ascending, orientation)
 
+        traces = []
         if orientation == 'v':
-
             traces = [go.Bar(x=[str(x) for x in df.columns],
                              y=df.iloc[row],
                              text=df.iloc[row],
                              textposition=textpos,
-                             marker=dict(opacity=opacity,
-                                         line=dict(color=linecolor,
-                                                   width=linewidth)),
+                             marker=dict(
+                                 opacity=opacity,
+                                 color=marker_color,
+                                 line=dict(
+                                     color=linecolor,
+                                     width=linewidth)),
                              name=df.iloc[row].name,
                              width=bar_width,
                              orientation=orientation)
                       for row in range(df.index.size)]
-
         else:
             traces = [go.Bar(x=df.iloc[:, col],
                              y=[str(x) for x in df.index],
                              text=df.iloc[:, col],
                              textposition=textpos,
-                             marker=dict(opacity=opacity,
-                                         line=dict(color=linecolor,
-                                                   width=linewidth)),
+                             marker=dict(
+                                 opacity=opacity,
+                                 color=marker_color,
+                                 line=dict(
+                                     color=linecolor,
+                                     width=linewidth)),
                              name=df.columns[col],
                              width=bar_width,
                              orientation=orientation)
@@ -158,12 +147,17 @@ class PlotlyChart():
             fig.update_shapes(dict(xref='x', yref='y'))
 
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def line(self, df, layout, mode='lines', line_width=2,
              marker_size=None, marker_symbol='circle', text=None,
              text_position='bottom center', text_size=14,
-             text_color='lightgrey', annotations=None):
+             text_color='lightgrey', annotations=None,
+             line_smoothing=1.3, marker_color=None,
+             line_color=None):
         """Line chart
 
         Creates a single line chart or multiple-lines chart
@@ -238,11 +232,15 @@ class PlotlyChart():
             line_width = np.repeat(line_width, df.index.size).tolist()
 
         traces = [go.Scatter(x=df.columns, y=df.loc[row], mode=mode,
-                             line=dict(width=line_width.pop(0)),
+                             line=dict(width=line_width.pop(0),
+                                       color=line_color,
+                                       shape='spline', smoothing=line_smoothing),
                              text=text, name=row, textposition=text_position,
                              textfont=dict(size=text_size, color=text_color),
                              marker=dict(size=marker_size,
-                                         symbol=marker_symbol))
+                                         symbol=marker_symbol,
+                                         color=marker_color,
+                                         gradient=dict(type='radial', color=['#2f323d', '#bbbe64'])))
                   for row in df.index]
 
         if annotations:
@@ -251,8 +249,13 @@ class PlotlyChart():
         # initialize figure
         fig = go.Figure(data=traces, layout=layout)
 
+        return py.offline.iplot(fig) if self.iplot else fig
+
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def scatter(self, data, layout, marker_size=2,
                 marker_symbol='circle', text=None,
@@ -306,13 +309,16 @@ class PlotlyChart():
         fig = go.Figure(data=traces, layout=layout)
 
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def pie(self, labels, values, layout, hole=.3, name='',
             hoverinfo='label+percent', textinfo='value',
-            textfont_size=20, linewidth=10, linecolor='#202534',
+            textfont_size=20, linewidth=2, linecolor='#202534',
             pull=[], pull_dist=0.2, titlecolor='lightgrey',
-            titlesize=15, title=None, opacity=None):
+            titlesize=15, title=None, opacity=None, textposition=None):
         """Creates pie chart
 
         Create a pie chart by passing two lists, numpy arrays
@@ -364,7 +370,7 @@ class PlotlyChart():
 
         pull = [pull_dist if x in pull else 0 for x in labels]
         data = go.Pie(labels=labels, values=values, hole=hole, name=name,
-                      title=dict(text=title, color=titlecolor, size=titlesize),
+                      title=dict(text=title), textposition=textposition,
                       opacity=opacity, hoverinfo=hoverinfo, textinfo=textinfo,
                       textfont_size=textfont_size, pull=pull,
                       marker=dict(line=dict(color=linecolor, width=linewidth)))
@@ -373,7 +379,10 @@ class PlotlyChart():
         fig = go.Figure(data=data, layout=layout)
 
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def hist(self, layout, x=None, y=None, histnorm='percent', orientation='v',
              title='', x_title='', y_title='', name='', opacity=0.9,
@@ -420,8 +429,11 @@ class PlotlyChart():
         # initialize figure
         fig = go.Figure(data=traces, layout=layout)
 
-        # display chart
-        py.offline.iplot(fig)
+       # display chart
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def dot(self, df, layout):
         """Dot plot
@@ -444,7 +456,10 @@ class PlotlyChart():
         fig.update_yaxes(tickmode='array', tickvals=[*df.columns])
 
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def box(self, layout, y=None, x=None, boxpoints=False,
             boxmean=True, jitter=0.3, pointpos=-1.5, opacity=0.9):
@@ -505,8 +520,12 @@ class PlotlyChart():
 
         # initialize figure
         fig = go.Figure(data=traces, layout=layout)
+
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def sunburst(self, labels, parents, values, layout):
         """Sunburst chart
@@ -536,7 +555,10 @@ class PlotlyChart():
         fig = go.Figure(data=data, layout=layout)
 
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def scatter_subplots(self, data, layout, rows, cols, titles):
         """Scatter chart subplots
@@ -557,8 +579,8 @@ class PlotlyChart():
 
         fig = make_subplots(rows=rows, cols=cols, subplot_titles=titles)
 
-        col_nums = np.tile([*range(1, cols+1)], rows)
-        row_nums = np.repeat([*range(1, rows+1)], cols)
+        col_nums = np.tile([*range(1, cols + 1)], rows)
+        row_nums = np.repeat([*range(1, rows + 1)], cols)
         plot_order = list(zip(col_nums, row_nums))
 
         for key, value in data.items():
@@ -579,7 +601,10 @@ class PlotlyChart():
             i['font'] = layout['annotations']['font']
 
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     def pie_subplots(self, data, rows, cols, titles,
                      layout, hole=.3, subplot_title_size=15,
@@ -627,8 +652,8 @@ class PlotlyChart():
         fig = make_subplots(rows=rows, cols=cols,
                             subplot_titles=titles, specs=specs)
 
-        col_nums = np.tile([*range(1, cols+1)], rows)
-        row_nums = np.repeat([*range(1, rows+1)], cols)
+        col_nums = np.tile([*range(1, cols + 1)], rows)
+        row_nums = np.repeat([*range(1, rows + 1)], cols)
         plot_order = list(zip(col_nums, row_nums))
 
         for key, value in data.items():
@@ -647,13 +672,16 @@ class PlotlyChart():
             i['font'] = layout['annotations']['font']
 
         # display chart
-        py.offline.iplot(fig)
+        if self.iplot:
+            py.offline.iplot(fig)
+        else:
+            return fig
 
     @staticmethod
     def layout(title='', title_alignment=0.5, title_color='lightgrey',
                title_font_family='sans-serif', title_size=24, x_title='',
-               y_title='', width=800, height=600, ml=75, mr=50, mb=75,
-               mt=75, pad=10, bg_color='#202534', grid_color='#343846',
+               y_title='', width=None, height=None, ml=75, mr=50, mb=75,
+               mt=75, pad=10, bg_color='#202534', grid_color='#3d4152',
                grid_width=0.5, zeroline_color='grey', axis_color='lightgrey',
                axis_fontfamily='sans-serif', axis_titlecolor='lightgrey',
                tick_color='lightgrey', yaxis_type='-', xaxis_type='-',
@@ -673,7 +701,7 @@ class PlotlyChart():
                xaxis_range=None, yaxis_separatethousands=True,
                xaxis_separatethousands=True, legend_fontfamily='sans-serif',
                legend_fontsize=12, legend_fontcolor='lightgrey',
-               legend_orientation='v', legend_x=1.02, legend_xanchor='left',
+               legend_orientation='v', legend_x=1, legend_xanchor='left',
                legend_y=1, legend_yanchor='middle', legend_traceorder='normal',
                legend_bordercolor='#202534', showlegend=True,
                legend_borderwidth=0, legend_itemclick='toggle',
@@ -718,7 +746,7 @@ class PlotlyChart():
         bg_color : str, optional
             Sets chart background color, by default '#202534'
         grid_color : str, optional
-            Sets grid color, by default '#343846'
+            Sets grid color, by default '#3d4152'
         grid_width : float, optional
             Sets grid width, by default 0.5
         zeroline_color : str, optional
@@ -982,7 +1010,7 @@ class PlotlyChart():
 
         return dict(
             showlegend=showlegend,
-            autosize=False,
+            autosize=True,
             colorway=color_palette,
             height=height,
             width=width,
@@ -1336,7 +1364,7 @@ class PlotlyChart():
         desat : float, optional
             Desaturates the colors, by default None
         input_type : str, optional
-            Choose between ‘rgb’, ‘hls’, ‘husl’, xkcd’, by default 'rgb'
+            Choose between ‘rgb’, ‘hls’, ‘husl’, ’xkcd’, by default 'rgb'
         reverse : bool, optional
             Reverses the palette, by default False
 
@@ -1344,7 +1372,7 @@ class PlotlyChart():
         -------
         list of hex colors
 
-        Raises
+        Raise
         ------
         ValueError
             Value error gets raised if palette_type is not
