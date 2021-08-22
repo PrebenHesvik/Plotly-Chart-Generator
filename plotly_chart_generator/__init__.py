@@ -6,5 +6,5 @@ from . dot_chart import dot_chart
 from . histogram import histogram
 from . sunburst_chart import sunburst_chart
 from . box_plot import box_plot
-from . chart_styles import chart_styles
+from . import chart_styles
 from . import subplots
