@@ -36,8 +36,9 @@ Usage
 -----
 .. code:: python
 
-    from plotly_chart_generator import PlotlyChart
-    chart = PlotlyChart()
+    from plotly_chart_generator.display_chart import display_chart
+    from plotly_chart_generator.bar_chart import bar_chart 
+    from plotly_chart_generator.chart_styles import chart_styles
 
     # create data
     index = ['Product A', 'Product B', 'Product C']
@@ -45,15 +46,30 @@ Usage
     data = pd.DataFrame(data=values, index=index).transpose()
 
 
-    # create chart
-    color_palette = chart.color_palette()
+    # layout
+    layout = chart_styles(
+        width=500, 
+        height=600,
+        title='Product sales (millions)', 
+        title_size=16, 
+        xaxis_ticksize=14)
 
-    layout = chart.layout(color_palette=color_palette, width=500, height=400,
-                        title='Sales per product (millions)',
-                        title_size=16, xaxis_ticksize=14)
+    # set colors
+    idmax = data.idxmax(axis=1)[0]
+    max_val_idx = data.columns.get_loc(idmax)
+    colors = ['lightslategray',] * len(data.values[0])
+    colors[max_val_idx] = 'crimson'
 
-    chart.bar(data, layout=layout, orientation='v', sort_by='Products',
-                ascending=False, bar_width=0.4, textpos='inside', linewidth=1)
+    # traces
+    traces = bar_chart(
+        df=data,
+        bar_width=0.4, 
+        textpos='inside', 
+        linewidth=1, 
+        marker_color=colors)
+
+
+    display_chart(traces=traces, layout=layout) 
 
 Disclaimer
 ----------
